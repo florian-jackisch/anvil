@@ -27,19 +27,24 @@ model families instead of upstream's defaults:
 | ------------ | ------------- | ------------------------------------------------ |
 | Heavy hitter | Claude Opus   | Expensive, very capable — reserved for high-risk |
 | Workhorse    | Claude Sonnet | Similar quality, more economical                 |
-| Cross-family | GPT Codex     | Different training lineage for diverse coverage  |
+| Cross-family | GPT           | Different training lineage for diverse coverage  |
 
-Always prefer the codex variant of GPT when one exists; fall back to the
-standard variant otherwise.
+Use the GPT reviewer from the latest GPT generation. Prefer the codex variant
+only when both a codex and a non-codex variant exist for that same generation.
+If only a non-codex GPT model exists, use the non-codex model.
 
-Replace the pre-defined models in the agent definition with the latest models from these families, e.g. GPT-5.4, Claude Opus 4.6 and Claude Sonnet 4.6.
+Replace the pre-defined models in the agent definition with the latest models
+from these families, e.g. GPT-5.4 when no codex sibling exists, Claude Opus
+4.6 and Claude Sonnet 4.6.
 
 ### Medium tasks — 1 reviewer
 
 Choose one reviewer that is **from a different model family** than the
 implementing model:
 
-- If the implementer is a **Claude** model → reviewer is **GPT** (codex).
+- If the implementer is a **Claude** model → reviewer is **GPT**. Prefer the
+  codex variant only when both codex and non-codex GPT variants exist for the
+  same generation.
 - If the implementer is **not Claude** → reviewer is **Claude Sonnet**.
 
 ### Large / high-risk tasks — 2 reviewers
@@ -47,7 +52,9 @@ implementing model:
 Always use exactly two reviewers, launched in parallel:
 
 1. **Claude Opus** — deep reasoning, catches subtle logic errors.
-2. **GPT Codex** — cross-family coverage, different failure modes.
+2. **GPT** — cross-family coverage, different failure modes. Prefer the codex
+   variant only when both codex and non-codex GPT variants exist for the same
+   generation.
 
 This replaces upstream's three-reviewer setup.
 
@@ -65,11 +72,15 @@ and should be updated when newer versions ship.
 
 ### Current model IDs
 
+At time of writing, the preferred GPT model is `gpt-5.4`. If a future GPT
+generation offers both codex and non-codex variants, prefer the codex variant.
+If there is only one GPT variant, use that one.
+
 | Role          | Model ID            |
 | ------------- | ------------------- |
 | Claude Opus   | `claude-opus-4.6`   |
 | Claude Sonnet | `claude-sonnet-4.6` |
-| GPT Codex     | `gpt-5.4`           |
+| GPT           | `gpt-5.4`           |
 
 ### Change 1 — Task Sizing: reviewer count
 
@@ -97,7 +108,9 @@ The code block should become:
 ```
 **Medium (no 🔴 files):** One `code-review` subagent. Choose the model based
 on the current session's implementing model:
-- If the implementing model is a Claude model → use `gpt-5.4`
+- If the implementing model is a Claude model → use the latest GPT model for
+  that generation, preferring the codex variant only when both codex and
+  non-codex variants exist. At time of writing: `gpt-5.4`
 - Otherwise → use `claude-sonnet-4.6`
 ```
 
@@ -106,6 +119,10 @@ Keep the existing review prompt unchanged.
 ### Change 4 — Step 5c Large reviewers
 
 Replace the three-reviewer block with two reviewers:
+
+For the GPT reviewer, use the latest GPT model for that generation, preferring
+the codex variant only when both codex and non-codex variants exist. At time of
+writing: `gpt-5.4`
 
 **Before:**
 
