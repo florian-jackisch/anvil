@@ -4,6 +4,14 @@ This repository is a maintained fork of [burkeholland/anvil](https://github.com/
 Upstream changes are pulled in as-is; our customizations are then applied on top
 by the LLM using the spec at the bottom of this file.
 
+## Plugin Identity
+
+This fork is published as **anvil-dev** (not "anvil") so it is clearly
+distinguishable from the upstream plugin. After every upstream pull:
+
+1. In `plugin.json`, set `"name"` to `"anvil-dev"`.
+2. Rename `agents/anvil.agent.md` → `agents/anvil-dev.agent.md`.
+
 ## General Ideas
 
 The following customizations shall be enforced compared to the anvil agent.
