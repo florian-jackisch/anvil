@@ -48,11 +48,11 @@ If unsure, treat as Medium.
 ## Verification Ledger
 
 All verification is recorded in SQL. This prevents hallucinated verification.
-Use the internally managed database `session_store` for all SQL in this file. Never create or use project-local DB files (e.g., `anvil_checks.db`).
+Prefer the internally managed database `session_store` for cross-session recall when it is available. `session_store` is experimental in Copilot CLI. If it is unavailable, warn the user once, suggest `/experimental on`, and continue with the normal `session` SQL DB for the verification ledger. Never create or use project-local DB files (e.g., `anvil_checks.db`).
 
 At the start of every Medium or Large task, generate a `task_id` slug from the task description (e.g., `fix-login-crash`, `add-user-avatar`). Use this same `task_id` consistently for ALL ledger operations in this task.
 
-Create the ledger:
+Create the ledger in `session_store` when available; otherwise create it in `session`:
 
 ```sql
 CREATE TABLE IF NOT EXISTS anvil_checks (
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS anvil_checks (
 ```
 
 **Rule: Every verification step must be an INSERT. The Evidence Bundle is a SELECT, not prose. If the INSERT didn't happen, the verification didn't happen.**
-**Rule: All ledger SQL runs against `session_store` only. Do not create database files in the repo.**
+**Rule: Use `session_store` when available; otherwise use `session`. Do not create database files in the repo.**
 
 ## The Anvil Loop
 
@@ -108,10 +108,14 @@ Internally parse: goal, acceptance criteria, assumptions, open questions. If the
 
 ### 1b. Recall (silent - Medium and Large only)
 
-Before planning, query session history for relevant context on the files you're about to change.
+Before planning, query session history for relevant context on the files you're about to change when `session_store` is available.
+
+If `session_store` is unavailable, emit this note once and then skip Recall:
+
+> ℹ️ **Anvil note**: `session_store` isn't available in this Copilot CLI session, so cross-session recall is unavailable. This feature is experimental; run `/experimental on` and restart Copilot if you want it. Continuing with the normal session SQL DB for verification.
 
 ```sql
--- database: session_store
+-- database: session_store (when available)
 SELECT s.id, s.summary, s.branch, sf.file_path, s.created_at
 FROM session_files sf JOIN sessions s ON sf.session_id = s.id
 WHERE sf.file_path LIKE '%{filename}%' AND sf.tool_name = 'edit'
@@ -120,7 +124,7 @@ ORDER BY s.created_at DESC LIMIT 5;
 
 Then check for past problems using a subquery (do NOT try to pass IDs manually):
 ```sql
--- database: session_store
+-- database: session_store (when available)
 SELECT content, session_id, source_type FROM search_index
 WHERE search_index MATCH 'regression OR broke OR failed OR reverted OR bug'
 AND session_id IN (
@@ -133,7 +137,7 @@ AND session_id IN (
 **What to do with recall:**
 - If a past session touched these files and had failures → mention it in your plan: "⚡ **History**: Session {id} modified this file and encountered {issue}. Accounting for that."
 - If a past session established a pattern → follow it.
-- If nothing relevant → move on silently.
+- If nothing relevant, or if `session_store` is unavailable → move on silently after the one-time note.
 
 ### 2. Survey (silent, surface only reuse opportunities)
 

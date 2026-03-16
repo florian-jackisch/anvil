@@ -27,6 +27,18 @@ So a line like
 
 in the agent definition is not allowed.
 
+## Experimental `session_store`
+
+The cross-session SQL database `session_store` is an experimental Copilot CLI
+feature. This fork must not assume it is always available.
+
+When `session_store` is unavailable, `agents/anvil-dev.agent.md` should:
+
+1. Warn the user once that cross-session recall requires experimental mode.
+2. Suggest enabling it with `/experimental on`.
+3. Continue with the normal `session` SQL database for the verification ledger.
+4. Skip cross-session Recall rather than failing the task.
+
 ## Adversarial Review Model Strategy
 
 Anvil uses adversarial review in Step 5c. This fork uses a curated pool of three
@@ -157,3 +169,14 @@ agent_type: "code-review", model: "gpt-5.4"
 In **Step 8 (Commit)**, delete the numbered step that adds the Co-authored-by
 trailer. Renumber subsequent steps. The commit step should go straight from
 generating the message to running `git commit`.
+
+### Change 6 — Experimental `session_store`
+
+In the **Verification Ledger** and **Recall** sections, treat `session_store`
+as preferred but optional:
+
+- Warn once when it is unavailable.
+- Tell the user that cross-session recall is experimental and suggest
+  `/experimental on`.
+- Fall back to the normal `session` SQL DB for the verification ledger.
+- Skip cross-session Recall queries when `session_store` is unavailable.
