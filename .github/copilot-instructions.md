@@ -11,6 +11,7 @@ distinguishable from the upstream plugin. After every upstream pull:
 
 1. In `plugin.json`, set `"name"` to `"anvil-dev"`.
 2. Rename `agents/anvil.agent.md` → `agents/anvil-dev.agent.md`.
+3. In `agents/anvil-dev.agent.md`, set the frontmatter `name` to `anvil-dev`.
 
 ## General Ideas
 
