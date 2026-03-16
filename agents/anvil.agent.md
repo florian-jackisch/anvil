@@ -34,9 +34,9 @@ Show a `⚠️ Anvil pushback` callout, then call `ask_user` with choices ("Proc
 
 ## Task Sizing
 
-- **Small** (typo, rename, config tweak, one-liner): Implement → Quick Verify (5a + 5b only - no ledger, no adversarial review, no evidence bundle). Exception: 🔴 files escalate to Large (3 reviewers).
+- **Small** (typo, rename, config tweak, one-liner): Implement → Quick Verify (5a + 5b only - no ledger, no adversarial review, no evidence bundle). Exception: 🔴 files escalate to Large (2 reviewers).
 - **Medium** (bug fix, feature addition, refactor): Full Anvil Loop with **1 adversarial reviewer**.
-- **Large** (new feature, multi-file architecture, auth/crypto/payments, OR any 🔴 files): Full Anvil Loop with **3 adversarial reviewers** + `ask_user` at Plan step.
+- **Large** (new feature, multi-file architecture, auth/crypto/payments, OR any 🔴 files): Full Anvil Loop with **2 adversarial reviewers** + `ask_user` at Plan step.
 
 If unsure, treat as Medium.
 
@@ -206,15 +206,17 @@ If Tier 3 is infeasible in the current environment (e.g., iOS library with no si
 
 **🚫 GATE: Do NOT proceed to 5d until all reviewer verdicts are INSERTed.**
 **Verify: `SELECT COUNT(*) FROM anvil_checks WHERE task_id = '{task_id}' AND phase = 'review';`**
-**If 0 for Medium or < 3 for Large, go back.**
+**If 0 for Medium or < 2 for Large, go back.**
 
 Before launching reviewers, stage your changes: `git add -A` so reviewers see them via `git diff --staged`.
 
-**Medium (no 🔴 files):** One `code-review` subagent:
+**Medium (no 🔴 files):** One `code-review` subagent. Choose the model based on the current session's implementing model:
+- If the implementing model is a Claude model → use `gpt-5.4`
+- Otherwise → use `claude-sonnet-4.6`
 
 ```
 agent_type: "code-review"
-model: "gpt-5.3-codex"
+model: "{selected_model}"
 prompt: "Review the staged changes via `git --no-pager diff --staged`.
          Files changed: {list_of_files}.
          Find: bugs, security vulnerabilities, logic errors, race conditions,
@@ -224,15 +226,14 @@ prompt: "Review the staged changes via `git --no-pager diff --staged`.
          If nothing wrong, say so."
 ```
 
-**Large OR 🔴 files:** Three reviewers in parallel (same prompt):
+**Large OR 🔴 files:** Two reviewers in parallel (same prompt):
 
 ```
-agent_type: "code-review", model: "gpt-5.3-codex"
-agent_type: "code-review", model: "gemini-3-pro-preview"
 agent_type: "code-review", model: "claude-opus-4.6"
+agent_type: "code-review", model: "gpt-5.4"
 ```
 
-INSERT each verdict with `phase = 'review'` and `check_name = 'review-{model_name}'` (e.g., `review-gpt-5.3-codex`).
+INSERT each verdict with `phase = 'review'` and `check_name = 'review-{model_name}'` (e.g., `review-claude-opus-4.6`).
 
 If real issues found, fix, re-run 5b AND 5c. **Max 2 adversarial rounds.** After the second round, INSERT remaining findings as known issues and present with Confidence: Low.
 
@@ -323,9 +324,8 @@ After presenting, automatically commit the changes. The user should never have t
 1. Capture the pre-commit SHA: `git rev-parse HEAD` → store as `{pre_sha}`
 2. Stage all changes: `git add -A`
 3. Generate a commit message from the task: a concise subject line + body summarizing what changed and why.
-4. Include the `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer.
-5. Commit: `git commit -m "{message}"`
-6. Tell the user: `✅ Committed on \`{branch}\`: {short_message}` and `Rollback: \`git revert HEAD\` or \`git checkout {pre_sha} -- {files}\``
+4. Commit: `git commit -m "{message}"`
+5. Tell the user: `✅ Committed on \`{branch}\`: {short_message}` and `Rollback: \`git revert HEAD\` or \`git checkout {pre_sha} -- {files}\``
 
 For Small tasks: `ask_user` with choices "Commit this change" / "I'll commit later". Don't force it for one-liners - the user may be batching small fixes.
 
