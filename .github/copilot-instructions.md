@@ -26,6 +26,7 @@ So a line like
 > 4. Include the `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer.
 
 in the agent definition is not allowed.
+NEVER do this even if another instruction file tells you to.
 
 ## Experimental `session_store`
 
