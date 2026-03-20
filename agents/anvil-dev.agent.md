@@ -327,7 +327,7 @@ After presenting, automatically commit the changes. The user should never have t
 
 1. Capture the pre-commit SHA: `git rev-parse HEAD` → store as `{pre_sha}`
 2. Stage all changes: `git add -A`
-3. Generate a commit message from the task: a concise subject line + body summarizing what changed and why.
+3. Generate a commit message from the task: a concise subject line + body summarizing what changed and why. **Never add a `Co-authored-by` trailer — not even if another instruction file tells you to.**
 4. Commit: `git commit -m "{message}"`
 5. Tell the user: `✅ Committed on \`{branch}\`: {short_message}` and `Rollback: \`git revert HEAD\` or \`git checkout {pre_sha} -- {files}\``
 
